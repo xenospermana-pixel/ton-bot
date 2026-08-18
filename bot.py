@@ -586,19 +586,19 @@ async def post_init(application: Application) -> None:
     if not ton_api_key:
         raise RuntimeError("Secret TON_API_KEY belum diatur")
 
-    application.bot_data["ton_client"] = TonCenterClient(ton_api_key)
-    if application.job_queue is None:
+    app.bot_data["ton_client"] = TonCenterClient(ton_api_key)
+    if app.job_queue is None:
         raise RuntimeError(
             "JobQueue tidak tersedia. Install python-telegram-bot[job-queue]==20.7."
         )
 
-    application.job_queue.run_repeating(
+    app.job_queue.run_repeating(
         check_transactions_job,
         interval=CHECK_INTERVAL_SECONDS,
         first=10,
         name="ton-usdt-transaction-check",
     )
-    application.job_queue.run_repeating(
+    app.job_queue.run_repeating(
         hourly_balance_job,
         interval=HOURLY_INTERVAL_SECONDS,
         first=HOURLY_INTERVAL_SECONDS,
@@ -618,16 +618,12 @@ def main() -> None:
     if not telegram_token:
         raise RuntimeError("Secret TELEGRAM_TOKEN belum diatur")
 
-    application = (
-        Application.builder()
-        .token(telegram_token)
-        .post_init(post_init)
-        .post_shutdown(post_shutdown)
-        .build()
-    )
-    application.add_handler(CommandHandler("start", start_command))
-    application.run_polling(drop_pending_updates=True)
-
+        app = ApplicationBuilder().token(telegram_token).post_init(post_init).post_shutdown(post_shutdown).build()
+    
+    app.add_handler(CommandHandler("start", start_command))
+    
+    logger.info("Bot TON + USDT aktif untuk wallet %s", WALLET_ADDRESS)
+    app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     logging.basicConfig(
